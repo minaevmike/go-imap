@@ -88,7 +88,11 @@ func (r *reader) Next() (raw *rawResponse, err error) {
 	} else if tag := r.tag(raw.line); tag != "" {
 		r.order++
 		raw.Response = &Response{Order: r.order, Raw: raw.line, Tag: tag}
-		raw.tail = raw.line[len(tag)+1:]
+		if len(tag) != len(raw.line) {
+			raw.tail = raw.line[len(tag)+1:]
+		} else {
+			raw.tail = []byte{}
+		}
 	} else {
 		err = &ProtocolError{"bad response tag", raw.line}
 	}
@@ -121,7 +125,7 @@ func (r *reader) More(raw *rawResponse, i LiteralInfo) (l Literal, err error) {
 // (continuation request), and strings in the format "{r.tagid}[0-9]+" (command
 // completion). The tag must be followed by a space.
 func (r *reader) tag(line []byte) string {
-	if n := bytes.IndexByte(line, ' '); n == 1 {
+	if n := bytes.IndexByte(line, ' '); n == 1 || len(line) == 1 {
 		if c := line[0]; c == '*' || c == '+' {
 			return string(c)
 		}
